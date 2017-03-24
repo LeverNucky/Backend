@@ -1,39 +1,33 @@
-let articles = [
-                {id: 1, author: "author1", text: "this is the first article"},
-                {id: 2, author: "author2", text: "this is the second article"},
-                {id: 3, author: "author3", text: "this is the third article"}
-                ]
-
-
-const helloUser = (req, res) => {
-    const user = req.params.user || 'Somebody'
-    res.send('Hello ' + user + '!')
+const articles = {
+    articles:{
+        "1":{id : 1, author: 'Scott', text: "This is my first article"},
+        "2":{id : 2, author: 'Vivid', text: "This is Vivid's article"},
+        "3":{id : 3, author: 'Max', text: "This is Max,s article"},
+    },
+    curId: 4
 }
 
-const addArticle = (req, res) => {
-    console.log('Payload received', req.body)
-    let article = {id: articles.length + 1, 
-                   author: req.body.author || 'Will', 
-                   text:req.body.text } 
-    articles.push(article) 
-    res.send(article)
+
+const postArticle = (req, res) =>{
+    var id = articles.curId
+    articles.curId++
+    var newArticle = {id, author: req.body.author,text: req.body.text}
+    articles.articles[newArticle.id] = newArticle
+    res.send(newArticle)
+
 }
 
-const getArticle = (req, res) => {
-    if (req.params.id) {
-        let article = articles.filter(it => it.id == req.params.id)
-        res.send(article)
-    } else {
+const getArticle = (req, res)=>{
+    if (req.params.id){
+        res.send(articles.articles[req.params.id])
+    }
+    else{
         res.send(articles)
     }
 }
 
-module.exports = (app) => {
-//  app.get('/:user*?', helloUser)
-    app.post('/article', addArticle)
-    app.get('/articles/:id*?', getArticle)
+
+module.exports = (app) =>{
+    app.get('/articles/:id?', getArticle)
+    app.post('/article', postArticle)
 }
-
-
-
-
