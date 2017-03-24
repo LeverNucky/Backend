@@ -1,9 +1,9 @@
 const articles = {
-    articles:{
+    articles:[
         "1":{id : 1, author: 'Scott', text: "This is my first article"},
         "2":{id : 2, author: 'Vivid', text: "This is Vivid's article"},
-        "3":{id : 3, author: 'Max', text: "This is Max,s article"},
-    },
+        "3":{id : 3, author: 'Max', text: "This is Max,s article"}
+    ],
     curId: 4
 }
 

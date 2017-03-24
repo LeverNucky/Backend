@@ -29,6 +29,7 @@ const put = endpoint => fetch(`${config.backend}${endpoint}`, { method: 'PUT' })
 const getArticles = (oldArticles) => get('/articles').then(r => {
     const a = r.articles
     console.log(r)
+    console.log(a)
     if (!a || a.length < 3) {
         const msg = `FAIL: Expected at least 3 articles from GET /articles but found ${a.length}`
         console.error(msg)
