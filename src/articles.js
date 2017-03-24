@@ -1,7 +1,7 @@
 const articles = { articles: [ 
-          { id:1, author: 'Scott', body:'Post 1' },
-          { id:2, author: 'Max', body:'Post 2' },
-          { id:3, author: 'Joe', body:'Post 3' }
+          { id:1, author: 'Scott', text:'Post 1' },
+          { id:2, author: 'Max', text:'Post 2' },
+          { id:3, author: 'Joe', text:'Post 3' }
 ]};
 
 
@@ -9,7 +9,7 @@ const addArticle = (req, res) => {
      console.log('Payload received', req.body)  
      const newArticle = {
           author: req.body.author,
-          body: req.body.body,
+          text: req.body.text,
           id: articles.articles.length+1
      }  
      articles.articles.push(newArticle)
