@@ -6,6 +6,9 @@ const app = express()
 app.use(logger('default'))
 app.use(bodyParser.json())
 
+if (process.env.NODE_ENV !== "production") {
+    require('dotenv').load()
+}
 require('./src/profile.js')(app)
 require('./src/articles.js')(app)
 require('./src/hello.js')(app)
