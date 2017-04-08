@@ -1,4 +1,5 @@
-{ 
-	"netid": "qw13",
-	"backend": "https://ricebookqw13.herokuapp.com"
+{
+  "netid": "qw13",
+  "frontend": "https://ricebookqw13.surge.sh",
+  "backend": "https://ricebookqw13.herokuapp.com"
 }
