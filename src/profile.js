@@ -1,117 +1,109 @@
-const profile = [
-    {
-        user: 'qw13',
-        headline: 'headline 1',
-        email: 'a@bc.com',
-        dob: Date.parse('1994-01-01'),
-        zipcode: 12345,
-        avatar: 'https://upload.wikimedia.org/wikipedia/en/thumb/4/4e/DWLeebron.jpg/220px-DWLeebron.jpg',
-    },
-    {
-        user: 'seq1',
-        headline: 'headline 2',
-        email: 'b@cd.com',
-        dob: Date.parse('1994-02-02'),
-        zipcode: 23456,
-        avatar: 'pic1.jpg',
-    },
-    {
-        user: 'seq2',
-        headline: 'headline 3',
-        email: 'c@de.com',
-        dob: Date.parse('1994-03-03'),
-        zipcode: 34567,
-        avatar: 'pic2.jpg',
-    },
-    {
-        user: 'seq3',
-        headline: 'headline 3',
-        email: 'd@ef.com',
-        dob: Date.parse('1994-04-04'),
-        zipcode: 45678,
-        avatar: 'pic3.jpg',
-    }
-]
+const Profile= require('./model.js').Profile
 
 const getHeadlines = (req, res) => {
-	if (!req.user) req.user = 'qw13'
-    const users = req.params.users ? req.params.users.split(',') : [req.user]
+    const users = req.params.users ? req.params.users.split(',') : [req.username]
 	let result = []
 
-	users.forEach((element)=>{
-		let record = profile.filter((r) => {return r.user == element})[0]
-		result.push({username:record.user, headline:record.headline})
-	})
-	res.status(200).send({headlines:result})
+    Profile.find({username: {$in: users}}).exec(function(err, profiles){
+        if (!profiles || profiles.length==0){
+            res.status(400).send("Invalid user")          
+        }
+        profiles.forEach(profile => {
+            result.push({username: profile.username, headline: profile.headline})
+        })
+        res.send({headlines:result})
+    })
 }
 
 const putHeadline = (req, res) => {
-    if (!req.user) req.user = 'qw13'
-    profile.forEach((element)=>{
-        if(element.user === req.user){
-            element.headline = req.body.headline
-            res.status(200).send({username: element.user, headline: element.headline})
-        }
+    const user=req.username
+    const headline=req.body.headline
+    if(!headline){
+        res.status(400).send("headline can't be empty")
+        return
+    }
+    Profile.update({username:user},{$set:{headline:headline}},{new: true},function(err,profiles){
+        res.status(200).send({username:user,headline:headline})
     })
 }
 
 const getEmail = (req, res) => {
-    let username=req.params.user?req.params.user:'qw13'
-    const result = profile.filter((r) => {return r.user == username})[0]
-	res.status(200).send({username: result.user, email: result.email})
+    let user=req.params.user?req.params.user:req.username
+    Profile.find({username:user}).exec(function(err,profiles){
+        if(!profiles || profiles.length === 0){
+            res.status(400).send("Invalid user")
+        }
+        else{
+            res.status(200).send({username: user, email: profiles[0].email})
+        }
+    })
 }
 
 const putEmail = (req, res) => {
-    if (!req.user) req.user = 'qw13'
-    profile.forEach((element)=>{
-        if(element.user === req.user){
-            element.email = req.body.email
-            res.status(200).send({username: element.user, email: element.email})
-        }
+    const user=req.username
+    const email=req.body.email
+    if(!email){
+        res.status(400).send("Email can't be empty")
+        return
+    }
+    Profile.update({username:user},{$set:{email:email}},{new: true},function(err,profiles){
+        res.status(200).send({username:user,email:email})
     })
 }
 
 const getZipcode = (req, res) => {
-    let username=req.params.user?req.params.user:'qw13'
-    const result = profile.filter((r) => {return r.user == username})[0]
-    res.status(200).send({username: result.user, zipcode: result.zipcode})
+    let user=req.params.user?req.params.user:req.username
+    Profile.find({username:user}).exec(function(err,profiles){
+        if(!profiles || profiles.length === 0){
+            res.status(400).send("Invalid user")
+        }
+        else{
+            res.status(200).send({username: user, zipcode: profiles[0].zipcode})
+        }
+    })
 }
 
 const putZipcode = (req, res) => {
-    if (!req.user) req.user = 'qw13'
-    profile.forEach((element)=>{
-        if(element.user === req.user){
-            element.zipcode = req.body.zipcode
-            res.status(200).send({username: element.user, zipcode: element.zipcode})
-        }
+    const user=req.username
+    const zipcode=req.body.zipcode
+    if(!zipcode){
+        res.status(400).send("zipcode can't be empty")
+        return
+    }
+    Profile.update({username:user},{$set:{zipcode:zipcode}},{new: true},function(err,profiles){
+        res.status(200).send({username:user,zipcode:zipcode})
     })
 }
 
 const getAvatars = (req, res) => {
-    if (!req.user) req.user = 'qw13'
-    const users = req.params.users ? req.params.users.split(',') : [req.user]
+    const users = req.params.users ? req.params.users.split(',') : [req.username]
     let result = []
-    users.forEach(function(element){
-        let record = profile.filter((r) => {return r.user == element})[0]
-        result.push({username:record.user, avatar:record.avatar})
+
+    Profile.find({username: {$in: users}}).exec(function(err, profiles){
+        if (!profiles || profiles.length==0){
+            res.status(400).send("Invalid user")          
+        }
+        profiles.forEach(profile => {
+            result.push({username: profile.username, avatar: profile.avatar})
+        })
+        res.send({avatars:result})
     })
-    res.status(200).send({avatar:result})
 }
 
 const putAvatar = (req, res) => {
-    if (!req.user) req.user = 'qw13'
-    profile.forEach((element)=>{
-        if(element.user === req.user){
-            element.avatar = req.body.avatar
-            res.status(200).send({username: element.user, avatar: element.avatar})
-        }
-    })
+    res.status(400).send("Not implemented in HW7")
 }
 
 const getDob = (req, res) => {
-    let username=req.params.user?req.params.user:'qw13'
-    const result = profile.filter((r) => {return r.user == username})[0]
-    res.status(200).send({username: result.user, dob: result.dob})
+    let user=req.params.user?req.params.user:req.username
+    Profile.find({username:user}).exec(function(err,profiles){
+        if(!profiles || profiles.length === 0){
+            res.status(400).send("Invalid user")
+        }
+        else{
+            res.status(200).send({username: user, dob: profiles[0].dob})
+        }
+    })
 }
 
 module.exports = (app) => {

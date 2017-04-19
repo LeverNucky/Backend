@@ -1,76 +1,122 @@
 const md5=require('md5')
 const cookieParser = require('cookie-parser')
+const User = require('./model.js').User
+const redis = require('redis').createClient("redis://h:p125633bd33922f578e4e6d43214c39ba86235a85da9e9dd110a84bd2de5fd2b5@ec2-34-206-56-122.compute-1.amazonaws.com:35589")
 
-let arr=[]
-let sid = 1
-let currentUser=''
 const cookieKey = 'sid'
+const secretMessage = "Just some random strings haha"
+
 
 const register=(req,res)=>{
-	const username=req.body.username
-	const password=req.body.password
-	const salt = new Date().getTime() + username
-	const hash = md5(salt + password)
 
-	arr.push({username: username, salt: salt, hash: hash})
-	res.status(200).send({result:'success', username:username})
+    if (!req.body.username || !req.body.password){
+        return res.status(400).send("Empty password or username is not allowed")
+    }
+
+    const username=req.body.username
+    const password=req.body.password
+
+    User.find({username:username}).exec(function(err, users){
+        if (myuser.length!=0) {
+            return res.status(401).send("Username already exists")         
+        }
+        const salt = new Date().getTime() + username
+        const hash = md5(salt + password)
+        const newUser = new models.User({username: username, salt:salt, hash:hash})
+        newuUser.save()
+        const newProfile=new model.Profile({
+            username: username,
+            headline: 'Welcome to Ricebook',
+            following: [],
+            email: req.body.email,
+            zipcode: req.body.zipcode,
+            dob: req.body.dob,
+            avatar: 'https://upload.wikimedia.org/wikipedia/en/thumb/4/4e/DWLeebron.jpg/220px-DWLeebron.jpg' })
+        newProfile.save()
+    })  
+    res.status(200).send({result:'success', username:username})
 
 }
 
 const login=(req,res)=>{
-	
-	const username=req.body.username
-	const password=req.body.password
+    
+    if (!req.body.username || !req.body.password){
+        return res.status(400).send("Empty password or username is not allowed")
+    }
 
-	if (!username || !password){
-		res.sendStatus(400)
-		return
-	}
-	const userObj = getUser(username)
-	
-	if (!userObj || !isAuthorized(userObj, req)){
-		res.sendStatus(401)
-		return
-	}
+    const username=req.body.username
+    const password=req.body.password
 
-	res.cookie(cookieKey, generateCode(userObj), {maxAge: 3600*1000, httpOnly: true})
-	currentUser=username
-	res.status(200).send({username: username, result: 'success'})
+    User.find({username:username}).exec(function(err,users) {
+        if (users.length==0){
+            return res.status(401).send("Username hasn't been registered")   
+        }
+        const newSalt=users[0].salt
+        const newHash=md5(newSalt+password)
+        if (newhash!=users[0].hash){
+            return res.status(401).send("Incorrect password")        
+        }
+        else{
+            const sid=md5(secretMessage + new Date().getTime() + username)
+            redis.hmset(sid,users[0]);
+            res.cookie(cookieKey,sid,{maxAge:3600*1000,httpOnly:true})  
+        }
+    })
+    res.status(200).send({result:'success', username:username})
 }
 
 const logout=(req,res)=>{
-	currentUser = ''
-	sid=0
-	res.cookie(cookieKey, null, {maxAge: -1, httpOnly: true})
-	res.status(200).send('OK')
-	
+    redis.del(req.cookies[cookieKey])
+    res.clearCookie(cookieKey)
+    res.status(200).send("OK")
+}
+
+const isLoggedIn = (req, res, next) => {
+
+    const sid = req.cookies[cookieKey]
+    if(!sid){
+        return res.status(401)
+    }
+    else{
+        redis.hgetall(sid, function(err, userObj){
+            if(userObj){
+                req.username=userObj.username
+                next()
+            }
+            else{
+                res.redirect('/login');
+            }
+        })
+    }
 }
 
 const putPassword=(req,res)=>{
-	res.status(200).send({username: currentUser,status: 'will not change'})
+
+    const username = req.username
+    const password = req.body.password
+    User.find({username: username}).exec(function(err,users) {
+        const salt=users[0].salt
+        const hash=md5(salt+password)
+        if (hash===users[0].hash){
+            return res.status(401).send("New password is same as the old one")        
+        }
+        else{
+            const newSalt = new Date().getTime() + username
+            const newHash = md5(newSalt + password)
+            User.update({username: username}, { $set: { salt: newSalt, hash: newHash }}, {}, function(err, user){
+                res.status(200).send({username:username,status:'password changed'})
+            })
+        }
+    }) 
 }
 
-const getUser=(username)=>{
-	return arr.filter(r=>{return r.username==username})[0]
-}
-
-const isAuthorized=(userObj, req)=>{
-	const salt = userObj.salt
-	const password = req.body.password
-	const hash = md5(salt + password)
-	return (hash === userObj.hash)
-}
-
-const generateCode=(userObj)=>{
-	return sid++
-}
 
 module.exports=function(app){
-	app.use(cookieParser())
-	app.post('/register',register)
-	app.post('/login',login)
-	app.put('/password', putPassword)
-	app.put('/logout', logout)
+    app.use(cookieParser())
+    
+    app.post('/register',register)
+    app.post('/login',login)
+    app.put('/password', putPassword)
+    app.put('/logout', logout)
+    
 }
-
-

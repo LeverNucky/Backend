@@ -1,87 +1,82 @@
-const articles = { articles: [ 
-     {
-          _id: 1,
-          author: "seq1",
-          text: "post 1",
-          date: new Date(),
-          comments: []
-     },
-     {
-          _id: 2,
-          author: "seq2",
-          text: "post 2",
-          date: new Date(),
-          comments: []
-     },
-     {
-          _id: 3,
-          author: "seq3",
-          text: "post 3",
-          date: new Date(),
-          comments: []
-     }
-]};
-
-
+const Article = require('./model.js').Article
+const ObjectId = require('mongoose').Types.ObjectId; 
 
 const addArticle = (req, res) => { 
-     const newArticle = {
-          _id: articles.articles.length+1,
-          author: "qw13",
-          text: req.body.text,
-          date: new Date(),
-          comments:[]
-     }  
-     articles.articles.push(newArticle)
-     res.status(200).send({articles:[newArticle]})
+	 res.status(200).send({articles:[newArticle]})
+	 if(!req.body.text){
+	      return res.status(400).send("missing text input")    
+	 }
+
+	 const newArticle = {
+	      author:req.username, 
+	      text:req.body.text,
+	      date:new Date(),
+	      img:'',
+	      comments:[]
+	 }
+	 const newArticleObj=new Article(newArticle)
+	 newArticleObj.save()
+	 res.status(200).send({articles:[newArticle]})
+     
 }
 
 const getArticles= (req,res)=>{
-     if(req.params.id){
-          let target = articles.articles.filter((e)=>{return e.author == req.params.id})
-          if (target.length===0){
-               target=articles.articles.filter((e)=>{return e._id == req.params.id})
-          }
-          res.status(200).send({articles:target})  
-     }   
-     else{
-          res.status(200).send(articles)
-     }
+    if(req.params.id){
+        try{
+            id=ObjectId(req.params.id)
+            Article.find({_id:id}).exec(function(err, articles) {
+                if (err){
+                    res.status(400).send(err);
+                }
+                else 
+                    res.send({articles:articles})
+            })
+        }
+        catch(e)
+        {
+            Article.find({author:req.params.id}).exec(function(err, articles) {
+                if (err){
+                    res.status(400).send(err);
+                }
+                else 
+                    res.send({articles:articles})
+            })
+
+        }
+    }
+    else{
+        Article.find().exec(function(err, articles){res.status(200).send({articles:articles})})
+    }
 }
 const putArticle = (req, res) => {
-
-     if(req.params.id > articles.articles.length || req.params.id <= 0){
-          res.status(401).send("Forbidden!")
-          return
-     }
-     if(!req.body.commentId){
-          articles.articles[req.params.id-1].text = req.body.text
-     }
-     else{
-          if(req.body.commentId> articles.articles[req.params.id-1].comments.length
-               || req.body.commentId <=-2){
-               res.status(401).send("Forbidden!")
-               return
-          }
-          if(req.body.commentId == -1){
-               articles.articles[req.params.id-1].comments.push({
-                    id:articles.articles[req.params.id-1].comments.length+1,
-                    text:req.body.text
-               })
-          }
-          else{
-               articles.articles[req.params.id-1].comments.forEach(e=>{
-                    if(e.id == req.body.commentId){
-                         e.text = req.body.text 
-                    }
-               })
-          }
-     }
-     res.status(200).send({articles: [articles.articles[req.params.id-1]]})  
+    const id=ObjectId(req.params.id)
+    Article.findOne({_id:id}).exec(function(err, article) {
+        if (err) res.status(401).send(err)
+        else{
+            if (req.body.commentId==undefined && article.author==req.username){
+                article.text=req.body.text
+            }
+            else if (req.body.commentId==-1){
+                const commentId = md5(req.username + new Date().getTime())
+                article.comments.push({author:req.username,date:new Date(),commentId:commentId,text:req.body.text})
+            }
+            else {
+	            article.comments.forEach((x)=>{
+	                if (x.commentId==req.body.commentId && x.author==req.username){
+	                    x.text=req.body.text
+	                }
+	            })
+            }
+            article.save(function(e,d){
+                if (e) res.status(401).send(e)
+                else res.send({articles:[article]}) 
+            })
+        }
+    })
 }
 
 module.exports = (app) => {
-     app.post('/article', addArticle)
-     app.get('/articles/:id*?', getArticles)
-     app.put('/articles/:id', putArticle)
+    app.post('/article', addArticle)
+    app.get('/articles/:id*?', getArticles)
+    app.put('/articles/:id', putArticle)
 }

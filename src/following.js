@@ -1,24 +1,43 @@
-const following = {
-	username: 'qw13',
-	following: ['seq1', 'sep2', 'seq3']
-}
+const Profile= require('./model.js').Profile
 
 const getFollowing = (req, res) => {
-	res.send(following)
+	const user = req.params.user ? req.params.user : req.username
+	Profile.find({username:user}).exec(function(err,profiles){
+        if(!profiles || profiles.length === 0){
+            res.status(400).send("Invalid user")
+        }
+        else{
+            res.status(200).send({username:user,following:profiles[0].following})
+        }
+    })
 }
 
 const addFollowing = (req, res) => {
-	const user = req.params.user
-	following.following.push(user)
-	res.status(200).send(following)
+	const user = req.username
+    const following = req.params.user
+    if(!following){
+        res.status(400).send("missing the input following user")
+        return
+    }
+    Profile.update({username:user}, {$addToSet:{following:following}}, {new:true}, function(err,tank){
+        Profile.find({username:user}).exec(function(err, profiles){
+        	res.status(200).send({username:user,following:profiles[0].following})
+        })
+    })
 }
 
 const removeFollowing = (req, res) => {
-	const user = req.params.user
-	following = following.filter((e)=>{
-		return e!==user
-	})
-	res.status(200).send(following)
+	const user = req.username
+    const following = req.params.user
+    if(!following){
+        res.status(400).send("missing the input following user")
+        return
+    }
+    Profile.update({username:user}, {$pull:{following:following}}, {new:true}, function(err,tank){
+        Profile.find({username:user}).exec(function(err, profiles){
+        	res.status(200).send({username:user,following:profiles[0].following})
+        })
+    })
 }
 
 module.exports = app => {
