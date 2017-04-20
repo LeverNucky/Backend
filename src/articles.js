@@ -1,8 +1,8 @@
 const Article = require('./model.js').Article
 const ObjectId = require('mongoose').Types.ObjectId; 
+const md5=require('md5')
 
 const addArticle = (req, res) => { 
-	 res.status(200).send({articles:[newArticle]})
 	 if(!req.body.text){
 	      return res.status(400).send("missing text input")    
 	 }
@@ -23,7 +23,7 @@ const addArticle = (req, res) => {
 const getArticles= (req,res)=>{
     if(req.params.id){
         try{
-            id=ObjectId(req.params.id)
+            const id=ObjectId(req.params.id)
             Article.find({_id:id}).exec(function(err, articles) {
                 if (err){
                     res.status(400).send(err);
@@ -51,8 +51,9 @@ const getArticles= (req,res)=>{
 const putArticle = (req, res) => {
     const id=ObjectId(req.params.id)
     Article.findOne({_id:id}).exec(function(err, article) {
-        if (err) res.status(401).send(err)
+        if (err) res.status(401).send("No match")
         else{
+     
             if (req.body.commentId==undefined && article.author==req.username){
                 article.text=req.body.text
             }
@@ -68,7 +69,7 @@ const putArticle = (req, res) => {
 	            })
             }
             article.save(function(e,d){
-                if (e) res.status(401).send(e)
+                if (e) res.status(401).send("Error saving modified article")
                 else res.send({articles:[article]}) 
             })
         }

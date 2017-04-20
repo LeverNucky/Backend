@@ -1,5 +1,14 @@
 const mongoose = require('mongoose')
 
+
+let url=""
+
+if (process.env.MONGODB_URI) {
+	url = process.env.MONGODB_URI;
+}
+mongoose.connect(url)
+
+
 const userSchema=new mongoose.Schema( {
     username: String,
     salt: String,
@@ -22,7 +31,7 @@ const articleSchema=new mongoose.Schema( {
     date: Date,
     img: String, 
     comments: [{
-        commentId: Number,
+        commentId: String,
         author: String,
         text: String,
         date: Date
