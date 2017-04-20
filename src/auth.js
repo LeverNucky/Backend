@@ -2,7 +2,7 @@ const md5=require('md5')
 const cookieParser = require('cookie-parser')
 const User = require('./model.js').User
 const Profile= require('./model.js').Profile
-const redis = require('redis').createClient("redis://h:p125633bd33922f578e4e6d43214c39ba86235a85da9e9dd110a84bd2de5fd2b5@ec2-34-206-56-122.compute-1.amazonaws.com:35589")
+const redis = require('redis').createClient("redis://h:p5ef65d42ba47eb19928e0cd5cee2262472740d3a6e6e12c94c8c160737790a22@ec2-34-206-56-122.compute-1.amazonaws.com:40189")
 
 const cookieKey = 'sid'
 const secretMessage = "Just some random strings haha"
